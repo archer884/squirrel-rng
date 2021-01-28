@@ -14,6 +14,12 @@ impl SquirrelRng {
     }
 }
 
+impl Default for SquirrelRng {
+    fn default() -> Self {
+        SquirrelRng::new()
+    }
+}
+
 impl RngCore for SquirrelRng {
     #[inline]
     fn next_u32(&mut self) -> u32 {
