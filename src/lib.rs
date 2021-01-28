@@ -55,8 +55,9 @@ pub fn squirrel3(position: u32, seed: u32) -> u32 {
     mangled
 }
 
-/// Implement `next_u64` via `next_u32`, little-endian order. Taken straight
-/// from rand.
+// These two implementations are taken directly from the rand library.
+
+/// Implement `next_u64` via `next_u32`, little-endian order.
 pub fn next_u64_via_u32<R: RngCore + ?Sized>(rng: &mut R) -> u64 {
     // Use LE; we explicitly generate one value before the next.
     let x = u64::from(rng.next_u32());
