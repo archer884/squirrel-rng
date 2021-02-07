@@ -12,6 +12,13 @@ impl SquirrelRng {
             seed: rand::thread_rng().next_u32(),
         }
     }
+
+    pub fn with_seed(seed: u32) -> Self {
+        Self {
+            position: 0,
+            seed,
+        }
+    }
 }
 
 impl Default for SquirrelRng {
