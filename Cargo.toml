@@ -1,5 +1,5 @@
 [package]
-name = "squirrel"
+name = "squirrel-rng"
 version = "0.1.1"
 authors = ["J/A <archer884@gmail.com>"]
 edition = "2018"
