@@ -2,19 +2,19 @@ use rand::{RngCore, SeedableRng};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct SquirrelRng {
-    position: u32,
-    seed: u32,
+    position: u64,
+    seed: u64,
 }
 
 impl SquirrelRng {
     pub fn new() -> Self {
         Self {
             position: 0,
-            seed: rand::thread_rng().next_u32(),
+            seed: rand::thread_rng().next_u64(),
         }
     }
 
-    pub fn with_seed(seed: u32) -> Self {
+    pub fn with_seed(seed: u64) -> Self {
         Self { position: 0, seed }
     }
 
@@ -33,14 +33,14 @@ impl Default for SquirrelRng {
 impl RngCore for SquirrelRng {
     #[inline]
     fn next_u32(&mut self) -> u32 {
-        let result = squirrel3(self.position, self.seed);
-        self.position = self.position.wrapping_add(1);
-        result
+        self.next_u64() as u32
     }
 
     #[inline]
     fn next_u64(&mut self) -> u64 {
-        next_u64_via_u32(self)
+        let result = squirrel3(self.position, self.seed);
+        self.position = self.position.wrapping_add(1);
+        result
     }
 
     #[inline]
@@ -56,20 +56,20 @@ impl RngCore for SquirrelRng {
 }
 
 impl SeedableRng for SquirrelRng {
-    type Seed = [u8; 4];
+    type Seed = [u8; 8];
 
     fn from_seed(seed: Self::Seed) -> Self {
-        Self::with_seed(u32::from_le_bytes(seed))
+        Self::with_seed(u64::from_le_bytes(seed))
     }
 }
 
 #[inline]
-pub fn squirrel3(position: u32, seed: u32) -> u32 {
-    const BIT_NOISE1: u32 = 0x68E31DA4;
-    const BIT_NOISE2: u32 = 0xB5297A4D;
-    const BIT_NOISE3: u32 = 0x1B56C4E9;
+pub fn squirrel3(position: u64, seed: u64) -> u64 {
+    const BIT_NOISE1: u64 = 0xb333333333333027;
+    const BIT_NOISE2: u64 = 0x6666666666666800;
+    const BIT_NOISE3: u64 = 0x19999999999999eb;
 
-    let mut mangled = position as u32;
+    let mut mangled = position;
     mangled = mangled.wrapping_mul(BIT_NOISE1);
     mangled = mangled.wrapping_add(seed);
     mangled ^= mangled >> 8;
@@ -81,14 +81,6 @@ pub fn squirrel3(position: u32, seed: u32) -> u32 {
 }
 
 // These two implementations are taken directly from the rand library.
-
-/// Implement `next_u64` via `next_u32`, little-endian order.
-pub fn next_u64_via_u32<R: RngCore + ?Sized>(rng: &mut R) -> u64 {
-    // Use LE; we explicitly generate one value before the next.
-    let x = u64::from(rng.next_u32());
-    let y = u64::from(rng.next_u32());
-    (y << 32) | x
-}
 
 /// Implement `fill_bytes` via `next_u64` and `next_u32`, little-endian order.
 ///
