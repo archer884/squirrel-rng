@@ -53,8 +53,8 @@ impl RngCore for SquirrelRng {
 }
 
 pub fn squirrel3(position: u32, seed: u32) -> u32 {
-    const BIT_NOISE1: u32 = 0xB5297A4D;
-    const BIT_NOISE2: u32 = 0x68E31DA4;
+    const BIT_NOISE1: u32 = 0x68E31DA4;
+    const BIT_NOISE2: u32 = 0xB5297A4D;
     const BIT_NOISE3: u32 = 0x1B56C4E9;
 
     let mut mangled = position as u32;
