@@ -1,5 +1,6 @@
-use rand::RngCore;
+use rand::{RngCore, SeedableRng};
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct SquirrelRng {
     position: u32,
     seed: u32,
@@ -14,10 +15,7 @@ impl SquirrelRng {
     }
 
     pub fn with_seed(seed: u32) -> Self {
-        Self {
-            position: 0,
-            seed,
-        }
+        Self { position: 0, seed }
     }
 }
 
@@ -51,6 +49,8 @@ impl RngCore for SquirrelRng {
         Ok(())
     }
 }
+
+
 
 pub fn squirrel3(position: u32, seed: u32) -> u32 {
     const BIT_NOISE1: u32 = 0x68E31DA4;
