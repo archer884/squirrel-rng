@@ -50,7 +50,13 @@ impl RngCore for SquirrelRng {
     }
 }
 
+impl SeedableRng for SquirrelRng {
+    type Seed = [u8; 4];
 
+    fn from_seed(seed: Self::Seed) -> Self {
+        Self::with_seed(u32::from_le_bytes(seed))
+    }
+}
 
 pub fn squirrel3(position: u32, seed: u32) -> u32 {
     const BIT_NOISE1: u32 = 0x68E31DA4;
