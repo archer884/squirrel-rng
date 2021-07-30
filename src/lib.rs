@@ -1,5 +1,6 @@
-use rand::RngCore;
+use rand::{RngCore, SeedableRng};
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct SquirrelRng {
     position: u32,
     seed: u32,
@@ -14,10 +15,7 @@ impl SquirrelRng {
     }
 
     pub fn with_seed(seed: u32) -> Self {
-        Self {
-            position: 0,
-            seed,
-        }
+        Self { position: 0, seed }
     }
 }
 
@@ -31,7 +29,7 @@ impl RngCore for SquirrelRng {
     #[inline]
     fn next_u32(&mut self) -> u32 {
         let result = squirrel3(self.position, self.seed);
-        self.position += 1;
+        self.position = self.position.wrapping_add(1);
         result
     }
 
@@ -49,6 +47,14 @@ impl RngCore for SquirrelRng {
     fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
         self.fill_bytes(dest);
         Ok(())
+    }
+}
+
+impl SeedableRng for SquirrelRng {
+    type Seed = [u8; 4];
+
+    fn from_seed(seed: Self::Seed) -> Self {
+        Self::with_seed(u32::from_le_bytes(seed))
     }
 }
 
