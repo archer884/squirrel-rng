@@ -80,7 +80,7 @@ pub fn squirrel3(position: u64, seed: u64) -> u64 {
     mangled
 }
 
-// These two implementations are taken directly from the rand library.
+// As implemented by rand.
 
 /// Implement `fill_bytes` via `next_u64` and `next_u32`, little-endian order.
 ///
