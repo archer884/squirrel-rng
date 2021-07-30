@@ -29,7 +29,7 @@ impl RngCore for SquirrelRng {
     #[inline]
     fn next_u32(&mut self) -> u32 {
         let result = squirrel3(self.position, self.seed);
-        self.position += 1;
+        self.position = self.position.wrapping_add(1);
         result
     }
 
