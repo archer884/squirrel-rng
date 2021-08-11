@@ -18,7 +18,7 @@ impl SquirrelRng {
         Self { position: 0, seed }
     }
 
-    pub fn with_position(mut self, position: u32) -> Self {
+    pub fn with_position(mut self, position: u64) -> Self {
         self.position = position;
         self
     }
