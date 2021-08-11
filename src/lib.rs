@@ -17,6 +17,11 @@ impl SquirrelRng {
     pub fn with_seed(seed: u32) -> Self {
         Self { position: 0, seed }
     }
+
+    pub fn with_position(mut self, position: u32) -> Self {
+        self.position = position;
+        self
+    }
 }
 
 impl Default for SquirrelRng {
@@ -106,5 +111,23 @@ fn fill_bytes_via_next<R: RngCore + ?Sized>(rng: &mut R, dest: &mut [u8]) {
     } else if n > 0 {
         let chunk: [u8; 4] = rng.next_u32().to_le_bytes();
         left.copy_from_slice(&chunk[..n]);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use rand::RngCore;
+
+    use crate::SquirrelRng;
+
+    #[test]
+    fn copy_with_position_does_not_modify_original() {
+        let mut a = SquirrelRng::with_seed(3);
+        let mut b = a.with_position(1);
+        
+        let second_value = b.next_u32();
+        
+        assert_ne!(a.next_u32(), second_value);
+        assert_eq!(a.next_u32(), second_value);
     }
 }
