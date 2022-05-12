@@ -1,6 +1,6 @@
 [package]
 name = "squirrel-rng"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["J/A <archer884@gmail.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
@@ -15,4 +15,4 @@ An impl of `rand::Rng` based on a talk by Squirrel Eiserloh re: Math for Game Pr
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rand = "0.8.4"
+rand = "0.8.5"
