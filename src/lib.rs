@@ -1,4 +1,4 @@
-use rand::{RngCore, SeedableRng};
+pub use rand::{Rng, RngCore, SeedableRng};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct SquirrelRng {
@@ -69,7 +69,7 @@ pub fn squirrel3(position: u32, seed: u32) -> u32 {
     const BIT_NOISE2: u32 = 0xB5297A4D;
     const BIT_NOISE3: u32 = 0x1B56C4E9;
 
-    let mut mangled = position as u32;
+    let mut mangled = position;
     mangled = mangled.wrapping_mul(BIT_NOISE1);
     mangled = mangled.wrapping_add(seed);
     mangled ^= mangled >> 8;
@@ -124,9 +124,9 @@ mod tests {
     fn copy_with_position_does_not_modify_original() {
         let mut a = SquirrelRng::with_seed(3);
         let mut b = a.with_position(1);
-        
+
         let second_value = b.next_u32();
-        
+
         assert_ne!(a.next_u32(), second_value);
         assert_eq!(a.next_u32(), second_value);
     }
