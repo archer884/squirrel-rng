@@ -1,5 +1,7 @@
 pub use rand::{Rng, RngCore, SeedableRng};
 
+use rand::rngs::{OsRng, ThreadRng};
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct SquirrelRng {
     position: u32,
@@ -18,15 +20,33 @@ impl SquirrelRng {
         Self { position: 0, seed }
     }
 
-    pub fn with_position(mut self, position: u32) -> Self {
-        self.position = position;
-        self
+    pub fn seed_from(mut rng: impl Rng) -> Self {
+        Self {
+            position: 0,
+            seed: rng.next_u32(),
+        }
+    }
+
+    pub fn with_position(self, position: u32) -> Self {
+        Self { position, ..self }
     }
 }
 
 impl Default for SquirrelRng {
     fn default() -> Self {
         SquirrelRng::new()
+    }
+}
+
+impl From<ThreadRng> for SquirrelRng {
+    fn from(value: ThreadRng) -> Self {
+        Self::seed_from(value)
+    }
+}
+
+impl From<OsRng> for SquirrelRng {
+    fn from(value: OsRng) -> Self {
+        Self::seed_from(value)
     }
 }
 
