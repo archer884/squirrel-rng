@@ -1,5 +1,6 @@
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 
+#[cfg(feature = "getrandom")]
 use rand::rngs::OsRng;
 #[cfg(feature = "std")]
 use rand::rngs::ThreadRng;
@@ -50,6 +51,7 @@ impl From<ThreadRng> for SquirrelRng {
     }
 }
 
+#[cfg(feature = "getrandom")]
 impl From<OsRng> for SquirrelRng {
     fn from(value: OsRng) -> Self {
         Self::seed_from(value)

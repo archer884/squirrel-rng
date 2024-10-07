@@ -15,8 +15,9 @@ An impl of `rand::Rng` based on a talk by Squirrel Eiserloh re: Math for Game Pr
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rand = { version = "0.8.5", default-features = false, features = ["getrandom"] }
+rand = { version = "0.8.5", default-features = false }
 
 [features]
 default = ["std"]
+getrandom = ["rand/getrandom"]
 std = ["rand/std", "rand/std_rng"]
