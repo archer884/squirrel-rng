@@ -18,4 +18,5 @@ An impl of `rand::Rng` based on a talk by Squirrel Eiserloh re: Math for Game Pr
 rand = { version = "0.8.5", default-features = false, features = ["getrandom"] }
 
 [features]
+default = ["std"]
 std = ["rand/std", "rand/std_rng"]
