@@ -2,8 +2,10 @@
 
 #[cfg(feature = "getrandom")]
 use rand::rngs::OsRng;
+
 #[cfg(feature = "std")]
 use rand::rngs::ThreadRng;
+
 pub use rand::{Rng, RngCore, SeedableRng};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -15,21 +17,15 @@ pub struct SquirrelRng {
 impl SquirrelRng {
     #[cfg(feature = "std")]
     pub fn new() -> Self {
-        Self {
-            position: 0,
-            seed: rand::thread_rng().next_u32(),
-        }
+        Self::seed_from(rand::thread_rng())
+    }
+
+    pub fn seed_from(mut rng: impl Rng) -> Self {
+        Self::with_seed(rng.next_u32())
     }
 
     pub fn with_seed(seed: u32) -> Self {
         Self { position: 0, seed }
-    }
-
-    pub fn seed_from(mut rng: impl Rng) -> Self {
-        Self {
-            position: 0,
-            seed: rng.next_u32(),
-        }
     }
 
     pub fn with_position(self, position: u32) -> Self {

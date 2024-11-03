@@ -1,6 +1,6 @@
 [package]
 name = "squirrel-rng"
-version = "0.2.3"
+version = "0.2.4"
 authors = ["J/A <archer884@gmail.com>"]
 edition = "2018"
 license = "MIT/Apache-2.0"
@@ -18,6 +18,6 @@ An impl of `rand::Rng` based on a talk by Squirrel Eiserloh re: Math for Game Pr
 rand = { version = "0.8.5", default-features = false }
 
 [features]
-default = ["std"]
+default = ["std", "getrandom"]
 getrandom = ["rand/getrandom"]
 std = ["rand/std", "rand/std_rng"]
