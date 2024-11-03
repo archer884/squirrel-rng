@@ -1,6 +1,10 @@
-pub use rand::{Rng, RngCore, SeedableRng};
+#![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 
-use rand::rngs::{OsRng, ThreadRng};
+#[cfg(feature = "getrandom")]
+use rand::rngs::OsRng;
+#[cfg(feature = "std")]
+use rand::rngs::ThreadRng;
+pub use rand::{Rng, RngCore, SeedableRng};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct SquirrelRng {
@@ -9,6 +13,7 @@ pub struct SquirrelRng {
 }
 
 impl SquirrelRng {
+    #[cfg(feature = "std")]
     pub fn new() -> Self {
         Self {
             position: 0,
@@ -32,18 +37,21 @@ impl SquirrelRng {
     }
 }
 
+#[cfg(feature = "std")]
 impl Default for SquirrelRng {
     fn default() -> Self {
         SquirrelRng::new()
     }
 }
 
+#[cfg(feature = "std")]
 impl From<ThreadRng> for SquirrelRng {
     fn from(value: ThreadRng) -> Self {
         Self::seed_from(value)
     }
 }
 
+#[cfg(feature = "getrandom")]
 impl From<OsRng> for SquirrelRng {
     fn from(value: OsRng) -> Self {
         Self::seed_from(value)
