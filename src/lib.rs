@@ -1,11 +1,5 @@
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 
-#[cfg(feature = "getrandom")]
-use rand::rngs::OsRng;
-
-#[cfg(feature = "std")]
-use rand::rngs::ThreadRng;
-
 pub use rand::{Rng, RngCore, SeedableRng};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -17,11 +11,7 @@ pub struct SquirrelRng {
 impl SquirrelRng {
     #[cfg(feature = "std")]
     pub fn new() -> Self {
-        Self::seed_from(rand::thread_rng())
-    }
-
-    pub fn seed_from(mut rng: impl Rng) -> Self {
-        Self::with_seed(rng.next_u32())
+        Self::from_rng(&mut rand::rng())
     }
 
     pub fn with_seed(seed: u32) -> Self {
@@ -37,20 +27,6 @@ impl SquirrelRng {
 impl Default for SquirrelRng {
     fn default() -> Self {
         SquirrelRng::new()
-    }
-}
-
-#[cfg(feature = "std")]
-impl From<ThreadRng> for SquirrelRng {
-    fn from(value: ThreadRng) -> Self {
-        Self::seed_from(value)
-    }
-}
-
-#[cfg(feature = "getrandom")]
-impl From<OsRng> for SquirrelRng {
-    fn from(value: OsRng) -> Self {
-        Self::seed_from(value)
     }
 }
 
@@ -70,12 +46,6 @@ impl RngCore for SquirrelRng {
     #[inline]
     fn fill_bytes(&mut self, dest: &mut [u8]) {
         fill_bytes_via_next(self, dest);
-    }
-
-    #[inline]
-    fn try_fill_bytes(&mut self, dest: &mut [u8]) -> Result<(), rand::Error> {
-        self.fill_bytes(dest);
-        Ok(())
     }
 }
 
