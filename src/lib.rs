@@ -1,6 +1,9 @@
 #![cfg_attr(all(not(test), not(feature = "std")), no_std)]
 
-pub use rand::{Rng, RngCore, SeedableRng};
+use std::convert::Infallible;
+
+use rand::TryRng;
+pub use rand::{Rng, SeedableRng};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct SquirrelRng {
@@ -30,22 +33,25 @@ impl Default for SquirrelRng {
     }
 }
 
-impl RngCore for SquirrelRng {
+impl TryRng for SquirrelRng {
+    type Error = Infallible;
+
     #[inline]
-    fn next_u32(&mut self) -> u32 {
+    fn try_next_u32(&mut self) -> Result<u32, Self::Error> {
         let result = squirrel3(self.position, self.seed);
         self.position = self.position.wrapping_add(1);
-        result
+        Ok(result)
     }
 
     #[inline]
-    fn next_u64(&mut self) -> u64 {
-        next_u64_via_u32(self)
+    fn try_next_u64(&mut self) -> Result<u64, Self::Error> {
+        Ok(next_u64_via_u32(self))
     }
 
     #[inline]
-    fn fill_bytes(&mut self, dest: &mut [u8]) {
-        fill_bytes_via_next(self, dest);
+    fn try_fill_bytes(&mut self, dst: &mut [u8]) -> Result<(), Self::Error> {
+        fill_bytes_via_next(self, dst);
+        Ok(())
     }
 }
 
@@ -77,7 +83,7 @@ pub fn squirrel3(position: u32, seed: u32) -> u32 {
 // These two implementations are taken directly from the rand library.
 
 /// Implement `next_u64` via `next_u32`, little-endian order.
-pub fn next_u64_via_u32<R: RngCore + ?Sized>(rng: &mut R) -> u64 {
+pub fn next_u64_via_u32<R: Rng + ?Sized>(rng: &mut R) -> u64 {
     // Use LE; we explicitly generate one value before the next.
     let x = u64::from(rng.next_u32());
     let y = u64::from(rng.next_u32());
@@ -90,7 +96,7 @@ pub fn next_u64_via_u32<R: RngCore + ?Sized>(rng: &mut R) -> u64 {
 /// integers. That is why this method mostly uses `next_u64`, and only when
 /// there are 4 or less bytes remaining at the end of the slice it uses
 /// `next_u32` once.
-fn fill_bytes_via_next<R: RngCore + ?Sized>(rng: &mut R, dest: &mut [u8]) {
+fn fill_bytes_via_next<R: Rng + ?Sized>(rng: &mut R, dest: &mut [u8]) {
     let mut left = dest;
     while left.len() >= 8 {
         let (l, r) = { left }.split_at_mut(8);
@@ -110,7 +116,7 @@ fn fill_bytes_via_next<R: RngCore + ?Sized>(rng: &mut R, dest: &mut [u8]) {
 
 #[cfg(test)]
 mod tests {
-    use rand::RngCore;
+    use rand::Rng;
 
     use crate::SquirrelRng;
 
