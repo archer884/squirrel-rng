@@ -1,6 +1,6 @@
 [package]
 name = "squirrel-rng"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["J/A <archer884@gmail.com>"]
 edition = "2024"
 license = "MIT/Apache-2.0"
@@ -9,14 +9,14 @@ repository = "https://github.com/archer884/squirrel-rng"
 keywords = ["gamedev", "random", "rng"]
 categories = ["game-development"]
 description = """
-An impl of `rand::Rng` based on a talk by Squirrel Eiserloh re: Math for Game Programmers.
+A fast, seedable RNG implementing `rand_core::Rng`, based on a talk by Squirrel Eiserloh.
 """
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rand = { version = "0.10.0", default-features = false }
+rand_core = "0.10.1"
+getrandom = { version = "0.4", optional = true }
 
 [features]
-default = ["std"]
-std = ["rand/std", "rand/std_rng", "rand/thread_rng"]
+default = ["getrandom"]

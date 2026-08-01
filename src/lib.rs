@@ -1,9 +1,10 @@
-#![cfg_attr(all(not(test), not(feature = "std")), no_std)]
+#![cfg_attr(not(test), no_std)]
 
-use std::convert::Infallible;
+use core::convert::Infallible;
 
-use rand::TryRng;
-pub use rand::{Rng, SeedableRng};
+use rand_core::TryRng;
+use rand_core::utils::{fill_bytes_via_next_word, next_u64_via_u32};
+pub use rand_core::{Rng, SeedableRng};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct SquirrelRng {
@@ -12,9 +13,9 @@ pub struct SquirrelRng {
 }
 
 impl SquirrelRng {
-    #[cfg(feature = "std")]
+    #[cfg(feature = "getrandom")]
     pub fn new() -> Self {
-        Self::from_rng(&mut rand::rng())
+        Self::with_seed(getrandom::u32().expect("OS entropy source failed"))
     }
 
     pub fn with_seed(seed: u32) -> Self {
@@ -24,9 +25,43 @@ impl SquirrelRng {
     pub fn with_position(self, position: u32) -> Self {
         Self { position, ..self }
     }
+
+    pub fn gen_range(&mut self, range: core::ops::Range<u32>) -> u32 {
+        let len = range.end - range.start;
+        if len <= 1 {
+            return range.start;
+        }
+        let zone = u32::MAX - (u32::MAX % len);
+        loop {
+            let r = self.next_u32();
+            if r < zone {
+                return range.start + (r % len);
+            }
+        }
+    }
+
+    pub fn f32(&mut self) -> f32 {
+        (self.next_u32() >> 8) as f32 / (1u32 << 24) as f32
+    }
+
+    pub fn f64(&mut self) -> f64 {
+        (self.next_u64() >> 11) as f64 / (1u64 << 53) as f64
+    }
+
+    pub fn gen_bool(&mut self, p: f64) -> bool {
+        self.f64() < p
+    }
+
+    pub fn pick<'a, T>(&mut self, slice: &'a [T]) -> Option<&'a T> {
+        if slice.is_empty() {
+            return None;
+        }
+        let idx = self.gen_range(0..slice.len() as u32) as usize;
+        Some(&slice[idx])
+    }
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "getrandom")]
 impl Default for SquirrelRng {
     fn default() -> Self {
         SquirrelRng::new()
@@ -45,13 +80,12 @@ impl TryRng for SquirrelRng {
 
     #[inline]
     fn try_next_u64(&mut self) -> Result<u64, Self::Error> {
-        Ok(next_u64_via_u32(self))
+        next_u64_via_u32(self)
     }
 
     #[inline]
     fn try_fill_bytes(&mut self, dst: &mut [u8]) -> Result<(), Self::Error> {
-        fill_bytes_via_next(self, dst);
-        Ok(())
+        fill_bytes_via_next_word(dst, || self.try_next_u64())
     }
 }
 
@@ -80,43 +114,9 @@ pub fn squirrel3(position: u32, seed: u32) -> u32 {
     mangled
 }
 
-// These two implementations are taken directly from the rand library.
-
-/// Implement `next_u64` via `next_u32`, little-endian order.
-pub fn next_u64_via_u32<R: Rng + ?Sized>(rng: &mut R) -> u64 {
-    // Use LE; we explicitly generate one value before the next.
-    let x = u64::from(rng.next_u32());
-    let y = u64::from(rng.next_u32());
-    (y << 32) | x
-}
-
-/// Implement `fill_bytes` via `next_u64` and `next_u32`, little-endian order.
-///
-/// The fastest way to fill a slice is usually to work as long as possible with
-/// integers. That is why this method mostly uses `next_u64`, and only when
-/// there are 4 or less bytes remaining at the end of the slice it uses
-/// `next_u32` once.
-fn fill_bytes_via_next<R: Rng + ?Sized>(rng: &mut R, dest: &mut [u8]) {
-    let mut left = dest;
-    while left.len() >= 8 {
-        let (l, r) = { left }.split_at_mut(8);
-        left = r;
-        let chunk: [u8; 8] = rng.next_u64().to_le_bytes();
-        l.copy_from_slice(&chunk);
-    }
-    let n = left.len();
-    if n > 4 {
-        let chunk: [u8; 8] = rng.next_u64().to_le_bytes();
-        left.copy_from_slice(&chunk[..n]);
-    } else if n > 0 {
-        let chunk: [u8; 4] = rng.next_u32().to_le_bytes();
-        left.copy_from_slice(&chunk[..n]);
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use rand::Rng;
+    use rand_core::Rng;
 
     use crate::SquirrelRng;
 
@@ -129,5 +129,54 @@ mod tests {
 
         assert_ne!(a.next_u32(), second_value);
         assert_eq!(a.next_u32(), second_value);
+    }
+
+    #[test]
+    fn gen_range_stays_in_bounds() {
+        let mut rng = SquirrelRng::with_seed(42);
+        for _ in 0..1000 {
+            let r = rng.gen_range(10..20);
+            assert!((10..20).contains(&r));
+        }
+    }
+
+    #[test]
+    fn gen_range_single_element_range() {
+        let mut rng = SquirrelRng::with_seed(42);
+        for _ in 0..10 {
+            assert_eq!(rng.gen_range(7..8), 7);
+        }
+    }
+
+    #[test]
+    fn floats_stay_in_half_open_unit_interval() {
+        let mut rng = SquirrelRng::with_seed(42);
+        for _ in 0..1000 {
+            let f = rng.f32();
+            assert!((0.0..1.0).contains(&f));
+            let g = rng.f64();
+            assert!((0.0..1.0).contains(&g));
+        }
+    }
+
+    #[test]
+    fn gen_bool_extremes_are_deterministic() {
+        let mut rng = SquirrelRng::with_seed(42);
+        for _ in 0..100 {
+            assert!(!rng.gen_bool(0.0));
+            assert!(rng.gen_bool(1.0));
+        }
+    }
+
+    #[test]
+    fn pick_handles_empty_and_nonempty_slices() {
+        let mut rng = SquirrelRng::with_seed(42);
+        let empty: [i32; 0] = [];
+        assert!(rng.pick(&empty).is_none());
+        let slice = [10, 20, 30, 40];
+        for _ in 0..100 {
+            let r = rng.pick(&slice).unwrap();
+            assert!(slice.contains(r));
+        }
     }
 }
